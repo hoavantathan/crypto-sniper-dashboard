@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHARK DAT - CRYPTO TERMINAL</title>
+    <style>
+        body { background: #0b0e11; color: #00ff88; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { border: 2px solid #00ff88; padding: 40px; border-radius: 20px; box-shadow: 0 0 30px #00ff8822; width: 350px; text-align: center; background: #161a1e; }
+        .balance { font-size: 2.8em; margin: 25px 0; color: #ffffff; text-shadow: 0 0 15px #00ff88; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; border-top: 1px solid #2b3139; padding-top: 25px; }
+        .label { color: #848e9c; font-size: 0.8em; text-transform: uppercase; }
+        .value { font-weight: bold; font-size: 1.1em; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="font-size: 0.9em; opacity: 0.7;">🛰️ CRYPTO SNIPER V3.1</div>
+        <div class="balance" id="balance">0.00 USDT</div>
+        <div class="grid">
+            <div>
+                <div class="label">BTC Sniper</div>
+                <div id="btc_status" class="value">--</div>
+            </div>
+            <div>
+                <div class="label">ETH ETR</div>
+                <div id="eth_status" class="value">--</div>
+            </div>
+        </div>
+        <div style="margin-top: 30px; font-size: 0.7em; color: #474d57;">
+            Cập nhật: <span id="time">--</span>
+        </div>
+    </div>
+
+    <script>
+        async function update() {
+            try {
+                const r = await fetch('crypto_status.json?' + Math.random());
+                const d = await r.json();
+                document.getElementById('balance').innerText = d.balance;
+                document.getElementById('btc_status').innerText = d.btc_status;
+                document.getElementById('eth_status').innerText = d.eth_status;
+                document.getElementById('time').innerText = d.update_time;
+            } catch (e) { console.log("Chờ dữ liệu từ bot..."); }
+        }
+        setInterval(update, 5000); update();
+    </script>
+</body>
+</html>
+
+
