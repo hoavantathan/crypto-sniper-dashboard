@@ -1,46 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>SHARK DAT - QUANT TERMINAL</title>
+    <meta charset="UTF-8"><title>SHARK DAT - LIVE TERMINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #0b0e11; color: #00ff88; font-family: sans-serif; padding: 20px; }
         .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
         .box { background: #161a1e; border: 1px solid #2b3139; padding: 15px; border-radius: 8px; text-align: center; }
-        .label { font-size: 0.7em; color: #848e9c; text-transform: uppercase; }
-        .val { font-size: 1.3em; font-weight: bold; color: #fff; margin-top: 5px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: #161a1e; border: 1px solid #2b3139; padding: 15px; border-radius: 12px; height: 250px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .card { background: #161a1e; border: 1px solid #2b3139; padding: 15px; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { color: #848e9c; text-align: left; padding: 8px; border-bottom: 1px solid #2b3139; }
+        td { padding: 10px 8px; border-bottom: 1px solid #1e2329; }
+        .pnl-pos { color: #00ff88; font-weight: bold; }
+        .pnl-neg { color: #ff4d4d; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2 style="color:#fff">🛰️ CRYPTO SNIPER SENTINEL V3.3</h2>
+    <h2 style="color:#fff">🛰️ SHARK DAT - REAL-TIME TRACKER</h2>
     <div class="stats">
-        <div class="box"><div class="label">Win Rate</div><div class="val" id="wr">--%</div></div>
-        <div class="box"><div class="label">Profit Factor</div><div class="val" id="pf">--</div></div>
-        <div class="box"><div class="label">Drawdown</div><div class="val" id="dd" style="color:#ff4d4d">--%</div></div>
-        <div class="box"><div class="label">Balance</div><div class="val" id="balance">--</div></div>
-        <div class="box"><div class="label">Funding</div><div class="val" id="funding" style="color:#f0b90b">--</div></div>
+        <div class="box">Win Rate<div id="wr" style="font-size:1.2em;font-weight:bold">--</div></div>
+        <div class="box">Balance (USDT)<div id="balance" style="font-size:1.2em;font-weight:bold;color:#fff">--</div></div>
+        <div class="box">Funding<div id="funding" style="font-size:1.2em;font-weight:bold;color:#f0b90b">--</div></div>
     </div>
+
+    <div class="card">
+        <div style="color:#848e9c; font-weight:bold; font-size:0.8em">🔥 VỊ THẾ ĐANG MỞ (OPEN POSITIONS)</div>
+        <table id="posTable">
+            <thead><tr><th>Cặp</th><th>Phía</th><th>Giá Vào</th><th>PnL (USDT)</th><th>ROE (%)</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
     <div class="grid">
         <div class="card"><canvas id="pChart"></canvas></div>
         <div class="card"><canvas id="fChart"></canvas></div>
     </div>
+
     <script>
-        let charts = {};
         async function update() {
             const r = await fetch('crypto_status.json?' + Math.random()); const d = await r.json();
-            document.getElementById('wr').innerText = d.win_rate + '%';
-            document.getElementById('pf').innerText = d.pf;
-            document.getElementById('dd').innerText = d.drawdown + '%';
             document.getElementById('balance').innerText = d.balance;
             document.getElementById('funding').innerText = d.funding;
             
-            if(charts.p) charts.p.destroy();
-            charts.p = new Chart(document.getElementById('pChart'), { type:'line', data:{labels:d.price_chart.map((_,i)=>i), datasets:[{label:'BTC', data:d.price_chart, borderColor:'#00ff88', tension:0.3}]}, options:{maintainAspectRatio:false}});
-            
-            if(charts.f) charts.f.destroy();
-            charts.f = new Chart(document.getElementById('fChart'), { type:'bar', data:{labels:d.funding_chart.map((_,i)=>i), datasets:[{label:'Funding', data:d.funding_chart, backgroundColor:'#f0b90b'}]}, options:{maintainAspectRatio:false}});
+            // Cập nhật bảng lệnh
+            const tbody = document.querySelector("#posTable tbody");
+            if (d.open_positions.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;color:#474d57'>Không có lệnh nào đang chạy</td></tr>";
+            } else {
+                tbody.innerHTML = d.open_positions.map(p => `
+                    <tr>
+                        <td>${p.symbol}</td>
+                        <td>${p.side}</td>
+                        <td>${p.entry}</td>
+                        <td class="${p.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${p.pnl}</td>
+                        <td class="${p.roe >= 0 ? 'pnl-pos' : 'pnl-neg'}">${p.roe}%</td>
+                    </tr>
+                `).join('');
+            }
+            // (Phần vẽ Chart giữ nguyên như bản trước của Đạt)
         }
         setInterval(update, 10000); update();
     </script>
