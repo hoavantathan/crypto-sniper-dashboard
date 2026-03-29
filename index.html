@@ -1,69 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>SHARK DAT - PRO TERMINAL</title>
+    <meta charset="UTF-8"><title>SHARK DAT - QUANT TERMINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #0b0e11; color: #00ff88; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; display: flex; justify-content: center; }
-        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; width: 1000px; }
-        .card { background: #161a1e; border: 1px solid #2b3139; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .balance { font-size: 2.5em; font-weight: bold; color: #fff; margin: 10px 0; }
-        .metric { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.9em; color: #848e9c; }
-        table { width: 100%; font-size: 0.8em; margin-top: 15px; border-collapse: collapse; }
-        th { text-align: left; color: #848e9c; border-bottom: 1px solid #2b3139; padding-bottom: 5px; }
-        td { padding: 8px 0; border-bottom: 1px solid #1e2329; }
-        .chart-container { height: 250px; margin-top: 20px; }
+        body { background: #0b0e11; color: #00ff88; font-family: sans-serif; padding: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+        .box { background: #161a1e; border: 1px solid #2b3139; padding: 15px; border-radius: 8px; text-align: center; }
+        .label { font-size: 0.7em; color: #848e9c; text-transform: uppercase; }
+        .val { font-size: 1.3em; font-weight: bold; color: #fff; margin-top: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #161a1e; border: 1px solid #2b3139; padding: 15px; border-radius: 12px; height: 250px; }
     </style>
 </head>
 <body>
-    <div class="grid">
-        <div class="card">
-            <div style="font-size: 0.8em; color: #00ff88;">🛰️ CRYPTO SNIPER SENTINEL</div>
-            <div class="balance" id="balance">0.00 USDT</div>
-            <div class="metric"><span>Funding Rate:</span> <span id="funding" style="color:#f0b90b">--</span></div>
-            <div class="metric"><span>BTC Status:</span> <span id="btc_status">--</span></div>
-            
-            <div style="margin-top:20px; font-weight:bold; font-size:0.9em;">📝 NHẬT KÝ LỆNH</div>
-            <table id="history">
-                <thead><tr><th>Time</th><th>Pair</th><th>Signal</th></tr></thead>
-                <tbody></tbody>
-            </table>
-            <div style="margin-top:20px; font-size:0.7em; color:#474d57;">Last Sync: <span id="time">--</span></div>
-        </div>
-
-        <div class="card">
-            <div style="font-weight:bold;">📊 BIỂU ĐỒ GIÁ BTC (15M)</div>
-            <div class="chart-container"><canvas id="myChart"></canvas></div>
-        </div>
+    <h2 style="color:#fff">🛰️ CRYPTO SNIPER SENTINEL V3.3</h2>
+    <div class="stats">
+        <div class="box"><div class="label">Win Rate</div><div class="val" id="wr">--%</div></div>
+        <div class="box"><div class="label">Profit Factor</div><div class="val" id="pf">--</div></div>
+        <div class="box"><div class="label">Drawdown</div><div class="val" id="dd" style="color:#ff4d4d">--%</div></div>
+        <div class="box"><div class="label">Balance</div><div class="val" id="balance">--</div></div>
+        <div class="box"><div class="label">Funding</div><div class="val" id="funding" style="color:#f0b90b">--</div></div>
     </div>
-
+    <div class="grid">
+        <div class="card"><canvas id="pChart"></canvas></div>
+        <div class="card"><canvas id="fChart"></canvas></div>
+    </div>
     <script>
-        let chart;
+        let charts = {};
         async function update() {
-            const r = await fetch('crypto_status.json?' + Math.random());
-            const d = await r.json();
-            
+            const r = await fetch('crypto_status.json?' + Math.random()); const d = await r.json();
+            document.getElementById('wr').innerText = d.win_rate + '%';
+            document.getElementById('pf').innerText = d.pf;
+            document.getElementById('dd').innerText = d.drawdown + '%';
             document.getElementById('balance').innerText = d.balance;
-            document.getElementById('btc_status').innerText = d.btc_status;
             document.getElementById('funding').innerText = d.funding;
-            document.getElementById('time').innerText = d.update_time;
-
-            // Cập nhật bảng lịch sử
-            const tbody = document.querySelector("#history tbody");
-            tbody.innerHTML = d.history.map(t => `<tr><td>${t.time}</td><td>${t.pair}</td><td>${t.sig}</td></tr>`).join('');
-
-            // Vẽ biểu đồ
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (chart) chart.destroy();
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: d.chart_data.map((_, i) => i),
-                    datasets: [{ label: 'BTC Price', data: d.chart_data, borderColor: '#00ff88', tension: 0.4, pointRadius: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#2b3139' } } } }
-            });
+            
+            if(charts.p) charts.p.destroy();
+            charts.p = new Chart(document.getElementById('pChart'), { type:'line', data:{labels:d.price_chart.map((_,i)=>i), datasets:[{label:'BTC', data:d.price_chart, borderColor:'#00ff88', tension:0.3}]}, options:{maintainAspectRatio:false}});
+            
+            if(charts.f) charts.f.destroy();
+            charts.f = new Chart(document.getElementById('fChart'), { type:'bar', data:{labels:d.funding_chart.map((_,i)=>i), datasets:[{label:'Funding', data:d.funding_chart, backgroundColor:'#f0b90b'}]}, options:{maintainAspectRatio:false}});
         }
         setInterval(update, 10000); update();
     </script>
